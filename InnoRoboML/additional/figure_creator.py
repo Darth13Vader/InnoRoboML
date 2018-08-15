@@ -1,9 +1,10 @@
+import os
 from PIL import Image, ImageDraw
 from random import randint
-import os
+from FiguresSegmentation import DATA_PATH, MASK_COLORS
 
-COUNT = 50
-FOLDER = 'data'
+COUNT = 10000
+FOLDER = '../' + DATA_PATH
 
 try:
     os.mkdir(FOLDER)
@@ -11,12 +12,12 @@ except FileExistsError:
     pass
 
 try:
-    os.mkdir(f'{FOLDER}/origin')
+    os.mkdir(f'{FOLDER}/img')
 except FileExistsError:
     pass
 
 try:
-    os.mkdir(f'{FOLDER}/mask')
+    os.mkdir(f'{FOLDER}/gt')
 except FileExistsError:
     pass
 
@@ -46,9 +47,9 @@ for i in range(1, COUNT + 1):
     src_draw.ellipse((x - r, y - r, x + r, y + r), fill=(0, 0, 255))
     src_draw.polygon(tri, fill=(0, 255, 0))
 
-    mask_draw.rectangle(square, fill=(5, 5, 5))
-    mask_draw.ellipse((x - r, y - r, x + r, y + r), fill=(10, 10, 10))
-    mask_draw.polygon(tri, fill=(15, 15, 15))
+    mask_draw.rectangle(square, fill=tuple([MASK_COLORS[1]] * 3))
+    mask_draw.ellipse((x - r, y - r, x + r, y + r), fill=tuple([MASK_COLORS[2]] * 3))
+    mask_draw.polygon(tri, fill=tuple([MASK_COLORS[3]] * 3))
 
-    img.save(f'{FOLDER}/origin/img{i}.png')
-    mask.save(f'{FOLDER}/mask/img{i}.png')
+    img.save(f'{FOLDER}/img/img{i}.png')
+    mask.save(f'{FOLDER}/gt/img{i}.png')
