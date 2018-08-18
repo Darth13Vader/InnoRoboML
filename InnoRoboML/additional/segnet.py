@@ -3,7 +3,7 @@ from keras import models
 from keras.layers.core import Activation, Reshape, Permute
 from keras.layers.convolutional import Conv2D, MaxPooling2D, UpSampling2D
 from keras.layers.normalization import BatchNormalization
-from FiguresSegmentation import img_w, img_h, img_layers, n_labels
+from FiguresSegmentation import img_w, img_h, img_layers, n_labels, MODEL_NAME
 
 kernel = 3
 
@@ -122,7 +122,7 @@ autoencoder.add(Reshape((n_labels, img_h * img_w)))
 autoencoder.add(Permute((2, 1)))
 autoencoder.add(Activation('softmax'))
 
-with open('../models/model_segnet.json', 'w') as outfile:
+with open(f'../models/{MODEL_NAME}.json', 'w') as outfile:
     outfile.write(json.dumps(json.loads(autoencoder.to_json()), indent=2))
 
 print(autoencoder.summary())
