@@ -53,5 +53,5 @@ for i in range(1, COUNT + 1):
     mask_draw.ellipse((x - r, y - r, x + r, y + r), fill=tuple([MASK_COLORS[2]] * 3))
     mask_draw.polygon(tri, fill=tuple([MASK_COLORS[3]] * 3))
 
-    img.save(f'{FOLDER}/images/images{i}.png')
-    mask.save(f'{FOLDER}/gt/images{i}.png')
+    img.save(f'{FOLDER}/images/images{w_crp}.png')
+    mask.save(f'{FOLDER}/gt/images{w_crp}.png')
