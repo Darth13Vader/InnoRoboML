@@ -13,8 +13,8 @@ SAVE_PATH = f'../data_prepaired/{DATASET_NAME}'
 DATA_PATH = 'data_other/KITTI/training'
 
 ORIG_W, ORIG_H = 1216, 352
-STEP_W, STEP_H = 304, 0
-CROP_W, CROP_H = 96, 96
+STEP_W, STEP_H = 110, 110
+CROP_W, CROP_H = 128, 128
 
 try:
     os.mkdir(SAVE_PATH)
