@@ -1,5 +1,6 @@
 import os
 import time
+import argparse
 import matplotlib
 import pickle
 import numpy as np
@@ -135,12 +136,15 @@ class Segmentator:
         return autoencoder
 
 
-    def compile_model(self, build_model: bool):
+    def compile_model(self, build_model: bool, load_trained=False):
         if build_model:
             autoencoder = self.build_model()
         else:
-            with open(f'models/{self.model_name}.json') as model_file:
-                autoencoder = models.model_from_json(model_file.read())
+            if load_trained:
+                autoencoder = models.load_model(f'models/{self.model_name}..hdf5')
+            else:
+                with open(f'models/{self.model_name}.json') as model_file:
+                    autoencoder = models.model_from_json(model_file.read())
 
         autoencoder.compile(loss="categorical_crossentropy", optimizer='ADAM', metrics=['accuracy'])
         dprint('processes', 'Data loaded, model ready')
@@ -158,33 +162,49 @@ class Segmentator:
         return autoencoder, callbacks
 
 
-    def run(self, build_model: bool, state: str, epochs: int, batch_size: int, validation_split: float, ):
-        dprint('processes', 'Loading data')
-        images, masks = self.load_data()
-        dprint('processes', 'Data loaded')
+    def run(self, build_model: bool, state: str, epochs: int, batch_size: int, validation_split: float):
+        if state == 'train':
+            dprint('processes', 'Loading data')
+            images, masks = self.load_data()
+            dprint('processes', 'Data loaded')
 
-        dprint('processes', 'Converting masks...')
-        masks = self.labels_conversion(masks)
-        dprint('processes', 'Converssion done')
+            dprint('processes', 'Converting masks...')
+            masks = self.labels_conversion(masks)
+            dprint('processes', 'Converssion done')
 
-        images, masks = shuffle_in_unison(images, masks)
-        dprint('processes', 'Data shuffled')
+            images, masks = shuffle_in_unison(images, masks)
+            dprint('processes', 'Data shuffled')
 
-        img_w, img_h, _ = self.dataset_size
-        masks = masks.reshape((len(images), img_h * img_w, self.n_labels))
+            img_w, img_h, _ = self.dataset_size
+            masks = masks.reshape((len(images), img_h * img_w, self.n_labels))
 
-        autoencoder, callbacks = self.compile_model(build_model)
-        dprint('processes', 'Model compiled and ready to use')
+            autoencoder, callbacks = self.compile_model(build_model)
+            dprint('processes', 'Model compiled and ready to use')
 
-        dprint('processes', 'Starting train', '=' * 100, sep='\n')
-        history = autoencoder.fit(images, masks, batch_size=batch_size, epochs=epochs,
-                                  verbose=1, validation_split=validation_split, callbacks=callbacks)
-        dprint('processes', 'Train ended, see results above', '=' * 100, sep='\n')
-        autoencoder.save_weights(f'models/{self.model_name}_trained.hdf5')
+            dprint('processes', 'Starting train', '=' * 100, sep='\n')
+            history = autoencoder.fit(images, masks, batch_size=batch_size, epochs=epochs,
+                                      verbose=1, validation_split=validation_split, callbacks=callbacks)
+            dprint('processes', 'Train ended, see results above', '=' * 100, sep='\n')
+            autoencoder.save_weights(f'models/{self.model_name}_trained.hdf5')
 
 
 if __name__ == '__main__':
-    # ====== Config for Tensorflow ====== #
+    batch_size = 32
+    state = 'train'
+    epochs = 100
+    validation_split = 0.2
+
+    # ======= Config for ArgumentParser ======= #
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-bm', "--build_model", action="store_true")
+    parser.add_argument('-s', "--state", type=str, default=state, choices=['train', 'test', 'make'])
+    parser.add_argument('-e', '--epochs', type=int, default=epochs)
+    parser.add_argument('-bs', '--batch_size', type=int, default=batch_size)
+    parser.add_argument('-val', '--validation_split', type=float, default=validation_split)
+    args = parser.parse_args()
+    # ========================================= #
+
+    # ========= Config for Tensorflow ========= #
     tf.logging.set_verbosity(tf.logging.FATAL)
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
@@ -192,11 +212,16 @@ if __name__ == '__main__':
     config.gpu_options.per_process_gpu_memory_fraction = 0.999
     set_session(tf.Session(config=config))
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
-    # =================================== #
+    # ========================================= #
 
     segmentator = Segmentator(model_name='figures32',
                               dataset_name='figures32',
                               dataset_path=f'data_other/figures32',
                               dataset_size=(64, 64, 3),
                               random_seed=42)
-    segmentator.run(build_model=True, state='train', epochs=10, batch_size=32, validation_split=0.2)
+
+    segmentator.run(build_model=args.build_model,
+                    state=args.state,
+                    epochs=args.epochs,
+                    batch_size=args.batch_size,
+                    validation_split=args.validation_split)
