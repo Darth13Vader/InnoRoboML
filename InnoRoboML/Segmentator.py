@@ -47,15 +47,11 @@ def shuffle_in_unison(a, b):
 
 
 class Segmentator:
-    def __init__(self, model_name='kitti_segnet',
-                 dataset_name='KITTI',
-                 dataset_path=f'data_prepaired/KITTI',
-                 dataset_images_folder='img',
-                 dataset_labels_folder='gt',
-                 dataset_size=(128, 128, 3),
-                 random_seed=42):
+    def __init__(self, model_name: str, dataset_path: str,
+                 dataset_images_folder: str,
+                 dataset_labels_folder: str,
+                 dataset_size: (int, int, int), random_seed: int = 42):
         self.model_name = model_name
-        self.dataset_name = dataset_name
         self.dataset_path = dataset_path
         self.dataset_size = dataset_size
         self.dataset_images_folder = dataset_images_folder
@@ -86,6 +82,16 @@ class Segmentator:
             except IndexError:
                 files_img = files_img[load_from:]
                 files_lbl = files_lbl[load_from:]
+
+        # Ignoring not prepaired data
+        len_img_before = len(files_img)
+        # len_lbl_before = len(files_lbl)
+        files_img = list(set(files_img).difference(IGNORE_FILES))
+        files_lbl = list(set(files_lbl).difference(IGNORE_FILES))
+
+        assert len(files_img) == len(files_lbl)
+        dprint('variables', f'Deleted {len_img_before - len(files_img)} not prepaired images')
+
         dprint('processes', 'Loading images')
         images = list(map(lambda x: imread(f'{path_img}/{x}'), files_img))
         dprint('processes', 'Loading masks')
@@ -189,10 +195,26 @@ class Segmentator:
 
 
 if __name__ == '__main__':
-    batch_size = 32
     state = 'train'
     epochs = 100
+    batch_size = 32
     validation_split = 0.2
+
+    # Еще не размеченные данные
+    IGNORE_FILES = ['DJI_0052', 'DJI_0055', 'DJI_0057',
+                    'DJI_0067', 'DJI_0068', 'DJI_0069',
+                    'DJI_0070', 'DJI_0071', 'DJI_0072',
+                    'DJI_0074', 'DJI_0077', 'DJI_0078',
+                    'DJI_0082', 'DJI_0083', 'DJI_0084',
+                    'DJI_0085', 'DJI_0086', 'DJI_0087',
+                    'DJI_0088', 'DJI_0089', 'DJI_0093',
+                    'DJI_0099', 'DJI_0103']
+    new_ignore = []
+    for i in range(len(IGNORE_FILES)):
+        new_ignore.append(IGNORE_FILES[i] + '.png')
+        new_ignore.append(IGNORE_FILES[i] + '.jpg')
+    IGNORE_FILES = new_ignore
+    del new_ignore
 
     # ======= Config for ArgumentParser ======= #
     parser = argparse.ArgumentParser()
@@ -214,11 +236,21 @@ if __name__ == '__main__':
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
     # ========================================= #
 
-    segmentator = Segmentator(model_name='figures32',
-                              dataset_name='figures32',
-                              dataset_path=f'data_other/figures32',
-                              dataset_size=(64, 64, 3),
-                              random_seed=42)
+    cfg_figures32 = {'model_name':            'figures32',
+                     'dataset_path':          'data_other/figures32',
+                     'dataset_images_folder': 'img',
+                     'dataset_labels_folder': 'gt',
+                     'dataset_size':          (64, 64, 3),
+                     'random_seed':           42}
+
+    cfg_kamaz_dat = {'model_name':            'kamaz',
+                     'dataset_path':          'data_kamaz',
+                     'dataset_images_folder': 'img',
+                     'dataset_labels_folder': 'masks_machine',
+                     'dataset_size':          (1280, 1024, 3),
+                     'random_seed':           42}
+
+    segmentator = Segmentator(**cfg_kamaz_dat)
 
     segmentator.run(build_model=args.build_model,
                     state=args.state,
