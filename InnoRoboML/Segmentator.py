@@ -148,7 +148,7 @@ class Segmentator:
             autoencoder = self.build_model()
         else:
             if load_trained:
-                autoencoder = models.load_model(f'models/{self.model_name}..hdf5')
+                autoencoder = models.load_model(f'models/{self.model_name}.hdf5')
             else:
                 with open(f'models/{self.model_name}.json') as model_file:
                     autoencoder = models.model_from_json(model_file.read())
