@@ -67,7 +67,7 @@ class Segmentator:
         self.n_labels = -1
 
 
-    def load_data(self, load_first: int = -1, load_from: int = -1, load_to: int = -1) -> (np.ndarray, list):
+    def load_data(self, load_from: int = -1, load_to: int = -1) -> (np.ndarray, list):
         # =================================== #
         #      Loading images and labels      #
         # =================================== #
@@ -75,13 +75,6 @@ class Segmentator:
         path_lbl = f'{self.dataset_path}/{self.dataset_labels_folder}'
         files_img = os.listdir(path_img)
         files_lbl = os.listdir(path_lbl)
-        if load_first != -1:
-            try:
-                files_img = files_img[load_from:load_to]
-                files_lbl = files_lbl[load_from:load_to]
-            except IndexError:
-                files_img = files_img[load_from:]
-                files_lbl = files_lbl[load_from:]
 
         # Ignoring not prepaired data
         len_img_before = len(files_img)
@@ -92,9 +85,17 @@ class Segmentator:
         assert len(files_img) == len(files_lbl)
         dprint('variables', f'Deleted {len_img_before - len(files_img)} not prepaired images')
 
-        dprint('processes', 'Loading images')
+        if load_from != -1 and load_to != -1:
+            try:
+                files_img = files_img[load_from:load_to]
+                files_lbl = files_lbl[load_from:load_to]
+            except IndexError:
+                files_img = files_img[load_from:]
+                files_lbl = files_lbl[load_from:]
+
+        dprint('processes', f'Loading {len(files_img)} images')
         images = list(map(lambda x: imread(f'{path_img}/{x}'), files_img))
-        dprint('processes', 'Loading masks')
+        dprint('processes', f'Loading {len(files_lbl)} masks')
         labels = list(map(lambda x: imread(f'{path_lbl}/{x}')[:, :, 1], files_lbl))
         images = np.array(images) / 255.
         return images, labels
@@ -152,7 +153,7 @@ class Segmentator:
                 with open(f'models/{self.model_name}.json') as model_file:
                     autoencoder = models.model_from_json(model_file.read())
 
-        autoencoder.compile(loss="categorical_crossentropy", optimizer='ADAM', metrics=['accuracy'])
+        autoencoder.compile(loss='categorical_crossentropy', optimizer='ADAM', metrics=['accuracy'])
         dprint('processes', 'Data loaded, model ready')
 
         early_stop = EarlyStopping(monitor='val_acc', min_delta=0.0001,
@@ -168,10 +169,11 @@ class Segmentator:
         return autoencoder, callbacks
 
 
-    def run(self, build_model: bool, state: str, epochs: int, batch_size: int, validation_split: float):
+    def run(self, build_model: bool, state: str, epochs: int, batch_size: int, validation_split: float,
+            load_from=-1, load_to=-1):
         if state == 'train':
             dprint('processes', 'Loading data')
-            images, masks = self.load_data()
+            images, masks = self.load_data(load_from, load_to)
             dprint('processes', 'Data loaded')
 
             dprint('processes', 'Converting masks...')
@@ -197,7 +199,7 @@ class Segmentator:
 if __name__ == '__main__':
     state = 'train'
     epochs = 100
-    batch_size = 32
+    batch_size = 8
     validation_split = 0.2
 
     # Еще не размеченные данные
@@ -218,11 +220,13 @@ if __name__ == '__main__':
 
     # ======= Config for ArgumentParser ======= #
     parser = argparse.ArgumentParser()
-    parser.add_argument('-bm', "--build_model", action="store_true")
-    parser.add_argument('-s', "--state", type=str, default=state, choices=['train', 'test', 'make'])
+    parser.add_argument('-bm', '--build_model', action='store_true')
+    parser.add_argument('-s', '--state', type=str, default=state, choices=['train', 'test', 'make'])
     parser.add_argument('-e', '--epochs', type=int, default=epochs)
     parser.add_argument('-bs', '--batch_size', type=int, default=batch_size)
     parser.add_argument('-val', '--validation_split', type=float, default=validation_split)
+    parser.add_argument('-from', '--load_from', type=int, default=-1)
+    parser.add_argument('-to', '--load_to', type=int, default=-1)
     args = parser.parse_args()
     # ========================================= #
 
@@ -252,8 +256,7 @@ if __name__ == '__main__':
 
     segmentator = Segmentator(**cfg_kamaz_dat)
 
-    segmentator.run(build_model=args.build_model,
-                    state=args.state,
-                    epochs=args.epochs,
-                    batch_size=args.batch_size,
-                    validation_split=args.validation_split)
+    segmentator.run(build_model=args.build_model, state=args.state,
+                    epochs=args.epochs, batch_size=args.batch_size,
+                    validation_split=args.validation_split,
+                    load_from=args.load_from, load_to=args.load_to)

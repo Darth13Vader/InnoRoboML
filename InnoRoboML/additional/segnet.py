@@ -10,7 +10,7 @@ class SegnetBuilder:
     def build(model_name, img_h, img_w, img_layers, n_labels, kernel=3,
               save_path='models/{}.json') -> models.Sequential:
         encoding_layers = [
-            Conv2D(64, kernel, padding='same', input_shape=(img_h, img_w, img_layers)),
+            Conv2D(64, kernel, padding='same', input_shape=(img_w, img_h, img_layers)),
             BatchNormalization(),
             Activation('relu'),
             Conv2D(64, kernel, padding='same'),
