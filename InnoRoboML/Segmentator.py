@@ -31,7 +31,7 @@ def dprint(level: str, *values, sep=' ', end='\n'):
         tm = str(round(time.time() - TIME_ST, 2))
         tm += '0' * (5 - len(tm))
         tm = '0' * (6 - len(tm)) + tm
-        print(f'[{tm}][{level}] - ', end='')
+        print('[{}][{}] - '.format(tm, level), end='')
         print(*values, sep=sep, end=end)
 
 
@@ -60,7 +60,7 @@ class Segmentator:
         self.random_seed = random_seed
         np.random.seed(random_seed)
 
-        labels_files = os.listdir(f'{dataset_path}/{dataset_labels_folder}')
+        labels_files = os.listdir('{}/{}'.format(dataset_path, dataset_labels_folder))
         self.files_number = len(labels_files)
 
         self.masks = -1
@@ -71,8 +71,8 @@ class Segmentator:
         # =================================== #
         #      Loading images and labels      #
         # =================================== #
-        path_img = f'{self.dataset_path}/{self.dataset_images_folder}'
-        path_lbl = f'{self.dataset_path}/{self.dataset_labels_folder}'
+        path_img = '{}/{}'.format(self.dataset_path, self.dataset_images_folder)
+        path_lbl = '{}/{}'.format(self.dataset_path, self.dataset_labels_folder)
         files_img = os.listdir(path_img)
         files_lbl = os.listdir(path_lbl)
 
@@ -83,7 +83,7 @@ class Segmentator:
         files_lbl = list(set(files_lbl).difference(IGNORE_FILES))
 
         assert len(files_img) == len(files_lbl)
-        dprint('variables', f'Deleted {len_img_before - len(files_img)} not prepaired images')
+        dprint('variables', 'Deleted {} not prepaired images'.format(len_img_before - len(files_img)))
 
         if load_from != -1 and load_to != -1:
             try:
@@ -93,10 +93,10 @@ class Segmentator:
                 files_img = files_img[load_from:]
                 files_lbl = files_lbl[load_from:]
 
-        dprint('processes', f'Loading {len(files_img)} images')
-        images = list(map(lambda x: imread(f'{path_img}/{x}'), files_img))
-        dprint('processes', f'Loading {len(files_lbl)} masks')
-        labels = list(map(lambda x: imread(f'{path_lbl}/{x}')[:, :, 1], files_lbl))
+        dprint('processes', 'Loading {} images'.format(len(files_img)))
+        images = list(map(lambda x: imread('{}/{}'.format(path_img, x)), files_img))
+        dprint('processes', 'Loading {} masks'.format(len(files_lbl)))
+        labels = list(map(lambda x: imread('{}/{}'.format(path_lbl, x))[:, :, 1], files_lbl))
         images = np.array(images) / 255.
         return images, labels
 
@@ -111,21 +111,21 @@ class Segmentator:
             for el in a:
                 masks.add(el)
         n_labels = len(masks)
-        dprint('variables', f'Lables count: {n_labels}, values:', masks, sep='\n\t')
+        dprint('variables', 'Lables count: {}, values:'.format(n_labels), masks, sep='\n\t')
         masks = list(masks)
 
         img_w, img_h, _ = self.dataset_size
         labels_converted = np.array([np.zeros([img_h, img_w, n_labels])] * len(labels))
-        dprint('variables', f'Numpy labels_converted created:',
-               f'shape {labels_converted.shape}',
-               f'memory: {labels_converted.nbytes / 1048576} MB', sep='\n\t')
+        dprint('variables', 'Numpy labels_converted created:',
+               'shape {}'.format(labels_converted.shape),
+               'memory: {} MB'.format(labels_converted.nbytes / 1048576), sep='\n\t')
 
         tm_start = time.time()
         prev_mask_index = 0
         for i in range(len(labels)):
             if time.time() - tm_start > 2.0:
-                dprint('more_proc', f'Converting {i} mask, '
-                                    f'{round((i - prev_mask_index) / (time.time() - tm_start), 2)} mask per sec')
+                dprint('more_proc', 'Converting {} mask, '.format(i),
+                       '{} mask per sec'.format(round((i - prev_mask_index) / (time.time() - tm_start), 2)))
                 tm_start = time.time()
             for cls in masks:
                 labels_converted[i, :, :, masks.index(cls)] = labels[i] == cls
@@ -148,9 +148,9 @@ class Segmentator:
             autoencoder = self.build_model()
         else:
             if load_trained:
-                autoencoder = models.load_model(f'models/{self.model_name}..hdf5')
+                autoencoder = models.load_model('models/{}.hdf5'.format(self.model_name))
             else:
-                with open(f'models/{self.model_name}.json') as model_file:
+                with open('models/{}.json'.format(self.model_name)) as model_file:
                     autoencoder = models.model_from_json(model_file.read())
 
         autoencoder.compile(loss='categorical_crossentropy', optimizer='ADAM', metrics=['accuracy'])
@@ -158,7 +158,7 @@ class Segmentator:
 
         early_stop = EarlyStopping(monitor='val_acc', min_delta=0.0001,
                                    patience=10, verbose=1, mode='auto')
-        checkpoint = ModelCheckpoint(f'models/{self.model_name}.hdf5',
+        checkpoint = ModelCheckpoint('models/{}.hdf5'.format(self.model_name),
                                      monitor='val_loss',
                                      verbose=1,
                                      save_best_only=True,
@@ -193,7 +193,7 @@ class Segmentator:
             history = autoencoder.fit(images, masks, batch_size=batch_size, epochs=epochs,
                                       verbose=1, validation_split=validation_split, callbacks=callbacks)
             dprint('processes', 'Train ended, see results above', '=' * 100, sep='\n')
-            autoencoder.save_weights(f'models/{self.model_name}_trained.hdf5')
+            autoencoder.save_weights('models/{}_trained.hdf5'.format(self.model_name))
 
 
 if __name__ == '__main__':
