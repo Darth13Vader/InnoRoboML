@@ -68,8 +68,6 @@ for folder in [folder_img, folder_lbl]:
                 break
             h += STEP_H
 
-        break
-
     dprint('processes', 'Splitting done')
 
 dprint('processes', f'Program done, eval time {round(time.time() - TIME_ST, 2)} sec')

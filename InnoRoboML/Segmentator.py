@@ -72,17 +72,11 @@ class Segmentator:
         # =================================== #
         path_img = f'{self.dataset_path}/{self.dataset_images_folder}'
         path_lbl = f'{self.dataset_path}/{self.dataset_labels_folder}'
-        files_img = os.listdir(path_img)
-        files_lbl = os.listdir(path_lbl)
+        files_img = np.array(os.listdir(path_img))
+        files_lbl = np.array(os.listdir(path_lbl))
 
-        # Ignoring not prepaired data
-        len_img_before = len(files_img)
-        # len_lbl_before = len(files_lbl)
-        files_img = list(set(files_img).difference(IGNORE_FILES))
-        files_lbl = list(set(files_lbl).difference(IGNORE_FILES))
-
-        assert len(files_img) == len(files_lbl)
-        dprint('variables', f'Deleted {len_img_before - len(files_img)} not prepaired images')
+        files_img, files_lbl = shuffle_in_unison(files_img, files_lbl)
+        dprint('processes', 'Files shuffled')
 
         if load_from != -1 and load_to != -1:
             try:
@@ -179,9 +173,6 @@ class Segmentator:
             masks = self.labels_conversion(masks)
             dprint('processes', 'Converssion done')
 
-            images, masks = shuffle_in_unison(images, masks)
-            dprint('processes', 'Data shuffled')
-
             img_w, img_h, _ = self.dataset_size
             masks = masks.reshape((len(images), img_h * img_w, self.n_labels))
 
@@ -203,17 +194,17 @@ cfg_figures32 = {'model_name':            'figures32',
                  'dataset_size':          (64, 64, 3),
                  'random_seed':           42}
 
-load_prepaired = True
+load_prepaired = False
 cfg_kamaz_dat = {'model_name':            'kamaz',
                  'dataset_path':          'data_prepaired/kamaz' if load_prepaired else 'data_kamaz',
                  'dataset_images_folder': 'img',
                  'dataset_labels_folder': 'masks_machine',
-                 'dataset_size':          (128, 128, 3) if load_prepaired else (1280, 1024, 3),
+                 'dataset_size':          (512, 512, 3) if load_prepaired else (1280, 1024, 3),
                  'random_seed':           42}
 
 if __name__ == '__main__':
     state = 'train'
-    epochs = 100
+    epochs = 1000
     batch_size = 8
     validation_split = 0.2
 
