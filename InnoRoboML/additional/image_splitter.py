@@ -3,9 +3,30 @@ import os
 import threading
 import time
 import warnings
-
-from Segmentator import TIME_ST, cfg_kamaz_dat, dprint
 from skimage.io import imread, imsave
+
+# ==================== Govnokod,sorre ==================== #
+TIME_ST = time.time()
+DEBUG_LEVELS = {'print all': True, 'variables': True, 'processes': True, 'more_proc': True}
+load_prepaired = False
+cfg_kamaz_dat = {'model_name':            'kamaz',
+                 'dataset_path':          'data_prepaired/kamaz' if load_prepaired else 'data_kamaz',
+                 'dataset_images_folder': 'img',
+                 'dataset_labels_folder': 'masks_machine',
+                 'dataset_size':          (512, 512, 3) if load_prepaired else (1280, 1024, 3),
+                 'random_seed':           42}
+
+
+def dprint(level: str, *values, sep=' ', end='\n'):
+    if DEBUG_LEVELS['print all'] or DEBUG_LEVELS[level]:
+        tm = str(round(time.time() - TIME_ST, 2))
+        tm += '0' * (5 - len(tm))
+        tm = '0' * (6 - len(tm)) + tm
+        print(f'[{tm}][{level}] - ', end='')
+        print(*values, sep=sep, end=end)
+
+
+# ==================== Govnokod ended ==================== #
 
 warnings.simplefilter('ignore')
 

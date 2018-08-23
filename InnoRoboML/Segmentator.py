@@ -58,6 +58,7 @@ class Segmentator:
 
         self.random_seed = random_seed
         np.random.seed(random_seed)
+        dprint('variables', f'Random seed set to {random_seed}')
 
         labels_files = os.listdir(f'{dataset_path}/{dataset_labels_folder}')
         self.files_number = len(labels_files)
@@ -195,7 +196,7 @@ cfg_figures32 = {'model_name':            'figures32',
                  'dataset_size':          (64, 64, 3),
                  'random_seed':           42}
 
-load_prepaired = False
+load_prepaired = True
 cfg_kamaz_dat = {'model_name':            'kamaz',
                  'dataset_path':          'data_prepaired/kamaz' if load_prepaired else 'data_kamaz',
                  'dataset_images_folder': 'img',
@@ -228,18 +229,21 @@ if __name__ == '__main__':
     parser.add_argument('-val', '--validation_split', type=float, default=validation_split)
     parser.add_argument('-from', '--load_from', type=int, default=-1)
     parser.add_argument('-to', '--load_to', type=int, default=-1)
+    parser.add_argument('-seed', '--random_seed', type=int, default=42)
     args = parser.parse_args()
     # ========================================= #
 
     # ========= Config for Tensorflow ========= #
-    tf.logging.set_verbosity(tf.logging.FATAL)
-    config = tf.ConfigProto()
+    # tf.logging.set_verbosity(tf.logging.FATAL)
+    # config = tf.ConfigProto()
     # config.gpu_options.allow_growth = True
     # config.log_device_placement = True
     # config.gpu_options.per_process_gpu_memory_fraction = 0.999
     # set_session(tf.Session(config=config))
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
+    # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
     # ========================================= #
+
+    cfg_kamaz_dat['random_seed'] = args.random_seed
 
     segmentator = Segmentator(**cfg_kamaz_dat)
 
