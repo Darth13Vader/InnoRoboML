@@ -120,6 +120,7 @@ class Segmentator:
                 dprint('more_proc', f'Converting {i} mask, '
                                     f'{round((i - prev_mask_index) / (time.time() - tm_start), 2)} mask per sec')
                 tm_start = time.time()
+                prev_mask_index = i
             for cls in masks:
                 labels_converted[i, :, :, masks.index(cls)] = labels[i] == cls
 
