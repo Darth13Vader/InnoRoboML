@@ -12,8 +12,8 @@ SAVE_PATH = f'../data_prepaired/kamaz'
 DATA_PATH = 'data_kamaz'
 
 ORIG_W, ORIG_H = 1280, 1024
-STEP_W, STEP_H = 110, 110
-CROP_W, CROP_H = 128, 128
+STEP_W, STEP_H = 430, 350
+CROP_W, CROP_H = 512, 512
 
 folder_img = cfg_kamaz_dat["dataset_images_folder"]
 folder_lbl = cfg_kamaz_dat["dataset_labels_folder"]
@@ -67,6 +67,8 @@ for folder in [folder_img, folder_lbl]:
             if h == img.shape[0] - CROP_H:
                 break
             h += STEP_H
+
+        break
 
     dprint('processes', 'Splitting done')
 

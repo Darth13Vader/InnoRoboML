@@ -226,12 +226,6 @@ if __name__ == '__main__':
                     'DJI_0085', 'DJI_0086', 'DJI_0087',
                     'DJI_0088', 'DJI_0089', 'DJI_0093',
                     'DJI_0099', 'DJI_0103']
-    new_ignore = []
-    for i in range(len(IGNORE_FILES)):
-        new_ignore.append(IGNORE_FILES[i] + '.png')
-        new_ignore.append(IGNORE_FILES[i] + '.jpg')
-    IGNORE_FILES = new_ignore
-    del new_ignore
 
     # ======= Config for ArgumentParser ======= #
     parser = argparse.ArgumentParser()
