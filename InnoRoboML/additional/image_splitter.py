@@ -1,10 +1,11 @@
-import os
-import time
 import math
+import os
+import threading
+import time
 import warnings
-from skimage.io import imread, imsave, imshow
-from Segmentator import cfg_kamaz_dat
-from Segmentator import TIME_ST, dprint
+
+from Segmentator import TIME_ST, cfg_kamaz_dat, dprint
+from skimage.io import imread, imsave
 
 warnings.simplefilter('ignore')
 
@@ -14,6 +15,7 @@ DATA_PATH = 'data_kamaz'
 ORIG_W, ORIG_H = 1280, 1024
 STEP_W, STEP_H = 430, 350
 CROP_W, CROP_H = 512, 512
+THREADS = 500
 
 folder_img = cfg_kamaz_dat["dataset_images_folder"]
 folder_lbl = cfg_kamaz_dat["dataset_labels_folder"]
@@ -27,6 +29,37 @@ except FileExistsError:
 
 DATASET_NAME = DATA_PATH.split('/')
 
+
+def split_image(file):
+    img = imread(f'../{DATA_PATH}/{folder}/{file}')
+    w, h = 0, 0
+
+    if STEP_H == 0:
+        h_range = 1
+    else:
+        h_range = math.ceil(ORIG_H / STEP_H)
+
+    if STEP_W == 0:
+        w_range = 1
+    else:
+        w_range = math.ceil(ORIG_W / STEP_W)
+
+    for h_crp in range(h_range):
+        w = 0
+        if h + CROP_H > img.shape[0]:
+            h = img.shape[0] - CROP_H
+        for w_crp in range(w_range):
+            if w + CROP_W > img.shape[1]:
+                w = img.shape[1] - CROP_W
+            crp_img = img[h:h + CROP_H, w:w + CROP_W]
+            # plt.imshow(crp_img); plt.axis('off'); plt.show()
+            imsave(f'{SAVE_PATH}/{folder}/{file[:-4]}_{h_crp}{w_crp}.png', crp_img)
+            w += STEP_W
+        if h == img.shape[0] - CROP_H:
+            break
+        h += STEP_H
+
+
 for folder in [folder_img, folder_lbl]:
     time_start = time.time()
     all_files = os.listdir(f'../{DATA_PATH}/{folder}')
@@ -34,39 +67,18 @@ for folder in [folder_img, folder_lbl]:
     dprint('processes', f'Total files in folder: {len(all_files)}')
 
     for ind, file in enumerate(all_files):
+        while threading.active_count() > THREADS: pass
+
         if time.time() - time_start > 2.0:
             tmp = str(round(100 * ind / len(all_files), 2))
             tmp += '0' * (5 - len(tmp))
             dprint('more_proc', f'Splitting {ind} image [{tmp}%]')
             time_start = time.time()
 
-        img = imread(f'../{DATA_PATH}/{folder}/{file}')
-        w, h = 0, 0
+        threading.Thread(target=split_image, args=[file]).start()
 
-        if STEP_H == 0:
-            h_range = 1
-        else:
-            h_range = math.ceil(ORIG_H / STEP_H)
-
-        if STEP_W == 0:
-            w_range = 1
-        else:
-            w_range = math.ceil(ORIG_W / STEP_W)
-
-        for h_crp in range(h_range):
-            w = 0
-            if h + CROP_H > img.shape[0]:
-                h = img.shape[0] - CROP_H
-            for w_crp in range(w_range):
-                if w + CROP_W > img.shape[1]:
-                    w = img.shape[1] - CROP_W
-                crp_img = img[h:h + CROP_H, w:w + CROP_W]
-                # plt.imshow(crp_img); plt.axis('off'); plt.show()
-                imsave(f'{SAVE_PATH}/{folder}/{file[:-4]}_{h_crp}{w_crp}.png', crp_img)
-                w += STEP_W
-            if h == img.shape[0] - CROP_H:
-                break
-            h += STEP_H
+    dprint('processes', 'Waiting threadings...')
+    while threading.active_count() > 1: pass
 
     dprint('processes', 'Splitting done')
 
