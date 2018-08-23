@@ -52,7 +52,6 @@ class DataGenerator:
             for i in range(len(defects)):
                 imsave("new_data/img/{}.jpg".format(name), defects[i](image))
                 if defects[i] != random_noise:
-                    print(mask)
                     imsave("new_data/masks/{}.jpg".format(name), defects[i](mask))
                 else:
                     imsave("new_data/masks/{}.jpg".format(name), mask)
