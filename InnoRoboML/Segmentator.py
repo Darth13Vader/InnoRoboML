@@ -1,7 +1,6 @@
 import os
 import time
 import argparse
-import matplotlib
 import pickle
 import numpy as np
 from skimage.io import imread
@@ -196,6 +195,22 @@ class Segmentator:
             autoencoder.save_weights(f'models/{self.model_name}_trained.hdf5')
 
 
+# Configs #
+cfg_figures32 = {'model_name':            'figures32',
+                 'dataset_path':          'data_other/figures32',
+                 'dataset_images_folder': 'img',
+                 'dataset_labels_folder': 'gt',
+                 'dataset_size':          (64, 64, 3),
+                 'random_seed':           42}
+
+load_prepaired = True
+cfg_kamaz_dat = {'model_name':            'kamaz',
+                 'dataset_path':          'data_prepaired/kamaz' if load_prepaired else 'data_kamaz',
+                 'dataset_images_folder': 'img',
+                 'dataset_labels_folder': 'masks_machine',
+                 'dataset_size':          (128, 128, 3) if load_prepaired else (1280, 1024, 3),
+                 'random_seed':           42}
+
 if __name__ == '__main__':
     state = 'train'
     epochs = 100
@@ -233,26 +248,12 @@ if __name__ == '__main__':
     # ========= Config for Tensorflow ========= #
     tf.logging.set_verbosity(tf.logging.FATAL)
     config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
+    # config.gpu_options.allow_growth = True
     # config.log_device_placement = True
-    config.gpu_options.per_process_gpu_memory_fraction = 0.999
-    set_session(tf.Session(config=config))
+    # config.gpu_options.per_process_gpu_memory_fraction = 0.999
+    # set_session(tf.Session(config=config))
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
     # ========================================= #
-
-    cfg_figures32 = {'model_name':            'figures32',
-                     'dataset_path':          'data_other/figures32',
-                     'dataset_images_folder': 'img',
-                     'dataset_labels_folder': 'gt',
-                     'dataset_size':          (64, 64, 3),
-                     'random_seed':           42}
-
-    cfg_kamaz_dat = {'model_name':            'kamaz',
-                     'dataset_path':          'data_kamaz',
-                     'dataset_images_folder': 'img',
-                     'dataset_labels_folder': 'masks_machine',
-                     'dataset_size':          (1280, 1024, 3),
-                     'random_seed':           42}
 
     segmentator = Segmentator(**cfg_kamaz_dat)
 

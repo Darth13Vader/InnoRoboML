@@ -8,8 +8,8 @@
         "trainable": true,
         "batch_input_shape": [
           null,
-          1024,
-          1280,
+          128,
+          128,
           3
         ],
         "dtype": "float32",
@@ -2208,7 +2208,7 @@
       "config": {
         "name": "conv2d_26",
         "trainable": true,
-        "filters": 9,
+        "filters": 5,
         "kernel_size": [
           1,
           1
@@ -2283,8 +2283,8 @@
         "name": "reshape_1",
         "trainable": true,
         "target_shape": [
-          9,
-          1310720
+          5,
+          16384
         ]
       }
     },

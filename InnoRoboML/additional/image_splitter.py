@@ -2,30 +2,32 @@ import os
 import time
 import math
 import warnings
-import matplotlib.pyplot as plt
 from skimage.io import imread, imsave, imshow
-from FiguresSegmentation import DATASET_NAME, DATA_PATH
-from FiguresSegmentation import TIME_ST, dprint
+from Segmentator import cfg_kamaz_dat
+from Segmentator import TIME_ST, dprint
 
 warnings.simplefilter('ignore')
 
-SAVE_PATH = f'../data_prepaired/{DATASET_NAME}'
-DATA_PATH = 'data_other/KITTI/training'
+SAVE_PATH = f'../data_prepaired/kamaz'
+DATA_PATH = 'data_kamaz'
 
-ORIG_W, ORIG_H = 1216, 352
+ORIG_W, ORIG_H = 1280, 1024
 STEP_W, STEP_H = 110, 110
 CROP_W, CROP_H = 128, 128
 
+folder_img = cfg_kamaz_dat["dataset_images_folder"]
+folder_lbl = cfg_kamaz_dat["dataset_labels_folder"]
+
 try:
     os.mkdir(SAVE_PATH)
-    os.mkdir(f'{SAVE_PATH}/img')
-    os.mkdir(f'{SAVE_PATH}/gt')
+    os.mkdir(f'{SAVE_PATH}/{folder_img}')
+    os.mkdir(f'{SAVE_PATH}/{folder_lbl}')
 except FileExistsError:
     pass
 
 DATASET_NAME = DATA_PATH.split('/')
 
-for folder in ['img', 'gt']:
+for folder in [folder_img, folder_lbl]:
     time_start = time.time()
     all_files = os.listdir(f'../{DATA_PATH}/{folder}')
     dprint('processes', f'Starting splitting in /{folder}')

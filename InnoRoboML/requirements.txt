@@ -1,7 +1,7 @@
 tensorflow
 keras
 numpy
-skimage
+scikit-image
 pillow
 scipy
 argparse
