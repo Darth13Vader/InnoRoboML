@@ -65,5 +65,5 @@ class DataGenerator:
 
 
 if __name__ == '__main__':
-    dg = DataGenerator("../img/", "../masks_machine/")
+    dg = DataGenerator("../data_kamaz/img/", "../data_kamaz/masks_machine/")
     dg.data_augmentation(False)
