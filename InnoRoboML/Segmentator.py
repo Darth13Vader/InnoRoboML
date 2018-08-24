@@ -3,7 +3,7 @@ import time
 import argparse
 import pickle
 import numpy as np
-from skimage.io import imread
+from skimage.io import imread, imsave
 
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
@@ -49,12 +49,17 @@ class Segmentator:
     def __init__(self, model_name: str, dataset_path: str,
                  dataset_images_folder: str,
                  dataset_labels_folder: str,
-                 dataset_size: (int, int, int), random_seed: int = 42):
+                 dataset_size: (int, int, int), random_seed: int = 42,
+                 dataset_test_path: str = '',
+                 save_predictions_to: str = ''):
         self.model_name = model_name
         self.dataset_path = dataset_path
         self.dataset_size = dataset_size
         self.dataset_images_folder = dataset_images_folder
         self.dataset_labels_folder = dataset_labels_folder
+
+        self.dataset_test_path = dataset_test_path
+        self.save_predictions_to = save_predictions_to
 
         self.random_seed = random_seed
         np.random.seed(random_seed)
@@ -95,6 +100,16 @@ class Segmentator:
         return images, labels
 
 
+    def load_test(self):
+        files_img = os.listdir(self.dataset_test_path)
+
+        dprint('processes', f'Loading {len(files_img)} images...')
+        images = list(map(lambda x: imread(f'{self.dataset_test_path}/{x}'), files_img))
+        dprint('processes', f'Done')
+
+        return np.array(images)
+
+
     def labels_conversion(self, labels: list) -> np.ndarray:
         # =================================== #
         #   Label to neural out conversion    #
@@ -131,6 +146,31 @@ class Segmentator:
         return labels_converted
 
 
+    def predict_conversion(self, predictions: np.ndarray) -> list:
+        colors = [(255, 0, 0),  # - Red
+                  (80, 227, 194),  # - Light bluish
+                  (255, 118, 0),  # - Orange
+                  (74, 74, 74),  # - Grey
+                  (64, 119, 0),  # - Dark green
+                  (0, 255, 55),  # - Green
+                  (139, 87, 42),  # - Brown
+                  (0, 0, 255),  # - Blue
+                  (241, 234, 127),
+                  (46, 74, 98)]
+        colors = [np.array(x) for x in colors]
+        human_masks = []
+
+        for i in range(len(predictions)):
+            outmask = predictions[i].reshape(512, 512, 9)
+            conv = np.zeros((512, 512, 3))
+            for w in range(512):
+                for h in range(512):
+                    index = int(np.argmax(outmask[w, h]))
+                    conv[w, h, :] = colors[index]
+            human_masks.append(conv)
+        return human_masks
+
+
     def build_model(self):
         dprint('processes', 'Building model')
         autoencoder = SegnetBuilder.build(self.model_name, *self.dataset_size, self.n_labels)
@@ -148,7 +188,7 @@ class Segmentator:
                 with open(f'models/{self.model_name}.json') as model_file:
                     autoencoder = models.model_from_json(model_file.read())
 
-        autoencoder.compile(loss='categorical_crossentropy', optimizer='ADAM', metrics=['accuracy'])
+        autoencoder.compile(loss='categorical_crossentropy', optimizer='SGD', metrics=['accuracy'])
         dprint('processes', 'Data loaded, model ready')
 
         early_stop = EarlyStopping(monitor='val_acc', min_delta=0.0001,
@@ -186,6 +226,25 @@ class Segmentator:
                                       verbose=1, validation_split=validation_split, callbacks=callbacks)
             dprint('processes', 'Train ended, see results above', '=' * 100, sep='\n')
             autoencoder.save_weights(f'models/{self.model_name}_trained.hdf5')
+        elif state == 'test':
+            images = self.load_test()
+            if build_model:
+                raise ValueError('Only trained models can make predictions')
+            autoencoder, callbacks = self.compile_model(False, load_trained=True)
+
+            dprint('processes', 'Making predictions...')
+            predict = autoencoder.predict(images, 1, 2)
+
+            np.save('kek.npy', predict)
+            exit(0)
+
+            dprint('processes', 'Converting to rgb...')
+            predict = self.predict_conversion(predict)
+            dprint('processes', 'Done! Saving predictions results...')
+            for ind, one_pic in enumerate(predict):
+                imsave(f'{self.save_predictions_to}/{"0" * (2 - len(str(ind)))}{ind}.png', one_pic.astype(np.uint8))
+
+            dprint('processes', 'Done')
 
 
 # Configs #
@@ -202,7 +261,9 @@ cfg_kamaz_dat = {'model_name':            'kamaz',
                  'dataset_images_folder': 'img',
                  'dataset_labels_folder': 'masks_machine',
                  'dataset_size':          (512, 512, 3) if load_prepaired else (1280, 1024, 3),
-                 'random_seed':           42}
+                 'random_seed':           42,
+                 'dataset_test_path':     'data_prepaired/kamaz/test',
+                 'save_predictions_to':   'data_prepaired/kamaz/pred'}
 
 if __name__ == '__main__':
     state = 'train'
